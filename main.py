@@ -1,0 +1,36 @@
+from fastapi import FastAPI, Depends
+import structlog
+import logging
+import os
+
+from core.event_bus import EventBus
+from core.memory_store import MemoryStore
+from reasoning.mangle_client import MangleClient
+from core.orchestrator import VDWOrchestrator
+from core import models  # ensure pydantic models import
+from core.api import router as api_router
+
+logger = structlog.get_logger()
+
+app = FastAPI(title="VDW Orchestrator", version="0.1.0")
+
+# Singletons
+_event_bus = EventBus(os.getenv("REDIS_URL", "redis://localhost:6379"))
+_memory = MemoryStore(os.getenv("DATABASE_PATH", "data/memory"))
+_mangle = MangleClient(os.getenv("MANGLE_SERVER_ADDRESS", "localhost:50051"))
+_orchestrator = VDWOrchestrator(_event_bus, _memory, _mangle)
+
+async def get_orchestrator():
+    return _orchestrator
+
+app.include_router(api_router, dependencies=[Depends(get_orchestrator)])
+
+@app.on_event("startup")
+async def startup():
+    await _event_bus.connect()
+    await _event_bus.start()
+    await _mangle.connect()
+
+@app.get("/")
+async def root():
+    return {"service": "vdw-orchestrator", "status": "ok"}
