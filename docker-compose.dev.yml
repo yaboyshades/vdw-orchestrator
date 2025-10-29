@@ -1,0 +1,43 @@
+# Development docker-compose with hot reload and bind mounts
+version: '3.8'
+services:
+  vdw-orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python", "main.py", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - MANGLE_SERVER_ADDRESS=mangle:50051
+      - DATABASE_PATH=/data/vdw_orchestrator.db
+      - LOG_LEVEL=DEBUG
+    volumes:
+      - ./:/app
+      - ./data:/data
+      - ./logs:/logs
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - mangle
+    networks:
+      - vdw-network
+  mangle:
+    build:
+      context: ./mangle
+      dockerfile: Dockerfile
+    volumes:
+      - ./mangle/reasoning_rules.dl:/app/reasoning_rules.dl:ro
+    ports:
+      - "50051:50051"
+    networks:
+      - vdw-network
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - vdw-network
+networks:
+  vdw-network:
+    driver: bridge
