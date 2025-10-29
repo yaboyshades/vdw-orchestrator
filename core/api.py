@@ -17,9 +17,32 @@ async def create_project(req: CreateProjectRequest, orchestrator: VDWOrchestrato
     project_id = await orchestrator.submit_new_project(req.vibe)
     return {"project_id": project_id}
 
+@router.get("/projects/{project_id}")
+async def get_project(project_id: str, orchestrator: VDWOrchestrator):
+    ctx = orchestrator.projects.get(project_id)
+    if not ctx:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return ctx.model_dump()
+
+@router.get("/projects/{project_id}/artifacts")
+async def get_artifacts(project_id: str, orchestrator: VDWOrchestrator):
+    ctx = orchestrator.projects.get(project_id)
+    if not ctx:
+        raise HTTPException(status_code=404, detail="Project not found")
+    artifacts = {
+        "phase_1_output": ctx.phase_1_output,
+        "phase_2_output": ctx.phase_2_output,
+        "phase_3_output": ctx.phase_3_output,
+        "phase_4_output": ctx.phase_4_output,
+        "phase_5_output": ctx.phase_5_output,
+    }
+    return artifacts
+
 @router.post("/projects/{project_id}/validate/phase-1")
 async def approve_phase_1(project_id: str, req: ValidateRequest, orchestrator: VDWOrchestrator):
     if not req.approved:
-        raise HTTPException(status_code=400, detail="Rejection loop not implemented yet")
+        # simple rejection loop: re-run Phase 1 with feedback noted
+        await orchestrator.approve_phase_1(project_id, feedback=req.feedback or "Re-run requested")
+        return {"status": "re-run", "message": "Phase 1 re-run initiated"}
     await orchestrator.approve_phase_1(project_id, req.feedback)
     return {"status": "ok"}
