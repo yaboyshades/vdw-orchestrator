@@ -10,6 +10,7 @@ from core.orchestrator import VDWOrchestrator
 from core import models  # ensure pydantic models import
 from core.api import router as api_router
 from core.tools_api import router as tools_router
+from core.tools_gaps_api import router as tools_gaps_router
 from core.tool_registry import MCPBoxRegistry
 
 logger = structlog.get_logger()
@@ -31,6 +32,7 @@ async def get_registry():
 
 app.include_router(api_router, dependencies=[Depends(get_orchestrator)])
 app.include_router(tools_router, dependencies=[Depends(get_registry)])
+app.include_router(tools_gaps_router, dependencies=[Depends(get_registry)])
 
 @app.on_event("startup")
 async def startup():
