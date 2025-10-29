@@ -1,0 +1,299 @@
+% Mangle Reasoning Rules for VDW Orchestrator
+% This file contains Datalog rules for advanced reasoning capabilities
+% including dependency validation, capability analysis, and self-reflection
+
+% =============================================================================
+% PHASE DEPENDENCY RULES
+% =============================================================================
+
+% Basic phase progression rules
+phase_order('IDLE', 'PHASE_1_MOOD').
+phase_order('PHASE_1_MOOD', 'PHASE_1_VALIDATION').
+phase_order('PHASE_1_VALIDATION', 'PHASE_2_ARCHITECTURE').
+phase_order('PHASE_2_ARCHITECTURE', 'PHASE_2_VALIDATION').
+phase_order('PHASE_2_VALIDATION', 'PHASE_3_SPECIFICATION').
+phase_order('PHASE_3_SPECIFICATION', 'PHASE_3_VALIDATION').
+phase_order('PHASE_3_VALIDATION', 'PHASE_4_IMPLEMENTATION').
+phase_order('PHASE_4_IMPLEMENTATION', 'PHASE_4_VALIDATION').
+phase_order('PHASE_4_VALIDATION', 'PHASE_5_VALIDATION_TESTING').
+phase_order('PHASE_5_VALIDATION_TESTING', 'PHASE_5_VALIDATION').
+phase_order('PHASE_5_VALIDATION', 'COMPLETED').
+
+% Validation bypass rules (when user rejects validation)
+validation_bypass('PHASE_1_VALIDATION', 'PHASE_1_MOOD').
+validation_bypass('PHASE_2_VALIDATION', 'PHASE_2_ARCHITECTURE').
+validation_bypass('PHASE_3_VALIDATION', 'PHASE_3_SPECIFICATION').
+validation_bypass('PHASE_4_VALIDATION', 'PHASE_4_IMPLEMENTATION').
+validation_bypass('PHASE_5_VALIDATION', 'PHASE_5_VALIDATION_TESTING').
+
+% Phase artifact requirements
+requires_artifact('PHASE_2_ARCHITECTURE', 'phase_1_output').
+requires_artifact('PHASE_3_SPECIFICATION', 'phase_2_output').
+requires_artifact('PHASE_4_IMPLEMENTATION', 'phase_3_output').
+requires_artifact('PHASE_5_VALIDATION_TESTING', 'phase_4_output').
+requires_artifact('COMPLETED', 'phase_5_output').
+
+% Transition validation rules
+can_transition(From, To) :- 
+    phase_order(From, To),
+    has_required_artifacts(From, To).
+
+can_transition(From, To) :- 
+    validation_bypass(From, To),
+    user_rejected_validation(From).
+
+% Artifact availability checking
+has_required_artifacts(From, To) :- 
+    requires_artifact(To, Artifact),
+    has_artifact(Artifact).
+
+has_required_artifacts(From, To) :- 
+    \+ requires_artifact(To, _).
+
+% =============================================================================
+% CAPABILITY ANALYSIS RULES
+% =============================================================================
+
+% Tool capability strength thresholds
+strong_capability(Tool, Capability) :- 
+    tool_provides_capability(Tool, Capability, Strength),
+    Strength >= 0.7.
+
+weak_capability(Tool, Capability) :- 
+    tool_provides_capability(Tool, Capability, Strength),
+    Strength >= 0.3,
+    Strength < 0.7.
+
+insufficient_capability(Tool, Capability) :- 
+    tool_provides_capability(Tool, Capability, Strength),
+    Strength < 0.3.
+
+% Capability satisfaction analysis
+capability_satisfied(Capability) :- 
+    required_capability(Capability),
+    strong_capability(Tool, Capability),
+    available_tool(Tool),
+    \+ deprecated_tool(Tool).
+
+capability_weakly_satisfied(Capability) :- 
+    required_capability(Capability),
+    weak_capability(Tool, Capability),
+    available_tool(Tool),
+    \+ deprecated_tool(Tool),
+    \+ capability_satisfied(Capability).
+
+capability_gap(Capability) :- 
+    required_capability(Capability),
+    \+ capability_satisfied(Capability),
+    \+ capability_weakly_satisfied(Capability).
+
+% Tool recommendation rules
+recommend_tool_creation(Capability) :- 
+    capability_gap(Capability),
+    high_priority_capability(Capability).
+
+recommend_tool_improvement(Tool, Capability) :- 
+    weak_capability(Tool, Capability),
+    required_capability(Capability),
+    frequently_used_tool(Tool).
+
+recommend_tool_replacement(OldTool, NewTool) :- 
+    deprecated_tool(OldTool),
+    replacement_tool(OldTool, NewTool),
+    available_tool(NewTool).
+
+% =============================================================================
+% DEPENDENCY ANALYSIS RULES
+% =============================================================================
+
+% Direct tool dependencies
+tool_depends_on(Tool1, Tool2) :- 
+    tool_dependency(Tool1, Tool2, 'requires').
+
+tool_conflicts_with(Tool1, Tool2) :- 
+    tool_dependency(Tool1, Tool2, 'conflicts').
+
+tool_optionally_uses(Tool1, Tool2) :- 
+    tool_dependency(Tool1, Tool2, 'optional').
+
+% Transitive dependency analysis
+transitive_dependency(Tool1, Tool2) :- 
+    tool_depends_on(Tool1, Tool2).
+
+transitive_dependency(Tool1, Tool3) :- 
+    tool_depends_on(Tool1, Tool2),
+    transitive_dependency(Tool2, Tool3).
+
+% Circular dependency detection
+circular_dependency(Tool1, Tool2) :- 
+    transitive_dependency(Tool1, Tool2),
+    transitive_dependency(Tool2, Tool1).
+
+% Dependency conflict analysis
+dependency_conflict(Tool1, Tool2, Tool3) :- 
+    tool_depends_on(Tool1, Tool2),
+    tool_depends_on(Tool1, Tool3),
+    tool_conflicts_with(Tool2, Tool3).
+
+% =============================================================================
+% PERFORMANCE ANALYSIS RULES
+% =============================================================================
+
+% Performance classification
+fast_tool(Tool) :- 
+    tool_performance(Tool, Duration, _),
+    Duration < 1000.  % Less than 1 second
+
+slow_tool(Tool) :- 
+    tool_performance(Tool, Duration, _),
+    Duration >= 5000.  % 5 seconds or more
+
+reliable_tool(Tool) :- 
+    tool_performance(Tool, _, SuccessRate),
+    SuccessRate >= 0.95.
+
+unreliable_tool(Tool) :- 
+    tool_performance(Tool, _, SuccessRate),
+    SuccessRate < 0.8.
+
+% Performance optimization recommendations
+optimize_for_speed(Tool) :- 
+    slow_tool(Tool),
+    frequently_used_tool(Tool).
+
+optimize_for_reliability(Tool) :- 
+    unreliable_tool(Tool),
+    critical_tool(Tool).
+
+consider_caching(Tool) :- 
+    fast_tool(Tool),
+    frequently_used_tool(Tool),
+    deterministic_tool(Tool).
+
+% =============================================================================
+% SELF-REFLECTION RULES
+% =============================================================================
+
+% Project success pattern analysis
+successful_project_pattern(Pattern) :- 
+    project_characteristic(Project, Pattern),
+    successful_project(Project),
+    findall(P, (project_characteristic(P, Pattern), successful_project(P)), Projects),
+    length(Projects, Count),
+    Count >= 3.  % Pattern appears in at least 3 successful projects
+
+% Failure pattern analysis
+failure_pattern(Pattern) :- 
+    project_characteristic(Project, Pattern),
+    failed_project(Project),
+    findall(P, (project_characteristic(P, Pattern), failed_project(P)), Projects),
+    length(Projects, Count),
+    Count >= 2.  % Pattern appears in at least 2 failed projects
+
+% Phase effectiveness analysis
+effective_phase_practice(Phase, Practice) :- 
+    phase_practice(Project, Phase, Practice),
+    successful_project(Project),
+    findall(P, (phase_practice(P, Phase, Practice), successful_project(P)), Projects),
+    length(Projects, Count),
+    findall(P2, successful_project(P2), AllSuccessful),
+    length(AllSuccessful, Total),
+    Count * 100 / Total >= 60.  % Practice used in 60%+ of successful projects
+
+% Tool usage pattern analysis
+effective_tool_combination(Tool1, Tool2) :- 
+    project_uses_tools(Project, [Tool1, Tool2]),
+    successful_project(Project),
+    findall(P, (project_uses_tools(P, [Tool1, Tool2]), successful_project(P)), Projects),
+    length(Projects, Count),
+    Count >= 2.
+
+% Cross-project learning opportunities
+reusable_tool(Tool) :- 
+    tool_created_in_project(Tool, Project1),
+    tool_used_in_project(Tool, Project2),
+    Project1 \= Project2.
+
+generic_capability(Capability) :- 
+    capability_used_in_phase(Capability, Phase1),
+    capability_used_in_phase(Capability, Phase2),
+    Phase1 \= Phase2.
+
+% =============================================================================
+% OPTIMIZATION RECOMMENDATION RULES
+% =============================================================================
+
+% Tool creation recommendations
+recommend_generic_tool(Capability) :- 
+    generic_capability(Capability),
+    \+ existing_generic_tool(Capability).
+
+% Process improvement recommendations
+recommend_phase_enhancement(Phase, Enhancement) :- 
+    effective_phase_practice(Phase, Enhancement),
+    \+ current_phase_practice(Phase, Enhancement).
+
+% Architecture pattern recommendations
+recommend_architecture_pattern(Pattern) :- 
+    successful_project_pattern(Pattern),
+    architecture_related_pattern(Pattern),
+    \+ current_architecture_pattern(Pattern).
+
+% =============================================================================
+% VALIDATION AND SAFETY RULES
+% =============================================================================
+
+% Prevent invalid transitions
+invalid_transition(From, To) :- 
+    \+ phase_order(From, To),
+    \+ validation_bypass(From, To).
+
+% Ensure artifact completeness
+incomplete_phase(Phase) :- 
+    current_phase(Phase),
+    requires_artifact_generation(Phase, Artifact),
+    \+ has_artifact(Artifact).
+
+% Security validation rules
+security_risk(Tool) :- 
+    tool_vulnerability(Tool, Severity),
+    high_severity(Severity).
+
+unsafe_tool_combination(Tool1, Tool2) :- 
+    security_risk(Tool1),
+    tool_depends_on(Tool2, Tool1),
+    critical_tool(Tool2).
+
+% =============================================================================
+% HELPER PREDICATES
+% =============================================================================
+
+% Severity classification
+high_severity('critical').
+high_severity('high').
+
+% Priority classification
+high_priority_capability(Capability) :- 
+    capability_priority(Capability, Priority),
+    Priority >= 4.
+
+% Usage frequency classification
+frequently_used_tool(Tool) :- 
+    tool_usage_count(Tool, Count),
+    Count >= 10.
+
+% Tool classification
+critical_tool(Tool) :- 
+    tool_criticality(Tool, 'critical').
+
+deterministic_tool(Tool) :- 
+    tool_property(Tool, 'deterministic').
+
+% Architecture pattern classification
+architecture_related_pattern(Pattern) :- 
+    pattern_category(Pattern, 'architecture').
+
+pattern_category('microservices', 'architecture').
+pattern_category('layered_architecture', 'architecture').
+pattern_category('event_driven', 'architecture').
+pattern_category('modular_design', 'architecture').

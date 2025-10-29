@@ -1,0 +1,171 @@
+// Protocol Buffer definitions for Mangle Reasoning Service
+// This defines the gRPC interface for communication between the VDW Orchestrator
+// and the Mangle deductive reasoning engine.
+
+syntax = "proto3";
+
+package reasoning;
+
+option go_package = "github.com/vdw-orchestrator/mangle/generated";
+
+// Reasoning service interface
+service ReasoningService {
+    // Execute a reasoning query
+    rpc Query(ReasoningRequest) returns (ReasoningResponse);
+    
+    // Stream multiple queries for batch processing
+    rpc BatchQuery(stream ReasoningRequest) returns (stream ReasoningResponse);
+    
+    // Health check
+    rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+    
+    // Load reasoning rules from file
+    rpc LoadRules(LoadRulesRequest) returns (LoadRulesResponse);
+    
+    // Get reasoning statistics
+    rpc GetStats(StatsRequest) returns (StatsResponse);
+}
+
+// Request message for reasoning queries
+message ReasoningRequest {
+    string query_id = 1;
+    string query_type = 2;  // "dependency_check", "gap_analysis", "optimization", "self_reflection"
+    repeated string facts = 3;  // Datalog facts
+    repeated string rules = 4;  // Additional Datalog rules
+    repeated string goals = 5;  // Goals to prove/find
+    map<string, string> context = 6;  // Additional context data
+    int32 timeout_seconds = 7;
+    int32 priority = 8;
+}
+
+// Response message for reasoning queries
+message ReasoningResponse {
+    string query_id = 1;
+    bool success = 2;
+    repeated Binding results = 3;  // Variable bindings from query results
+    repeated string reasoning_trace = 4;  // Step-by-step reasoning trace
+    double confidence = 5;
+    double duration_ms = 6;
+    string error_message = 7;
+    
+    // Specific result types
+    ValidationResult validation_result = 8;
+    GapAnalysisResult gap_analysis_result = 9;
+    OptimizationResult optimization_result = 10;
+    ReflectionResult reflection_result = 11;
+}
+
+// Variable binding result
+message Binding {
+    map<string, string> variables = 1;  // Variable name -> value mappings
+}
+
+// Validation result for dependency checks
+message ValidationResult {
+    bool allowed = 1;
+    string reason = 2;
+    repeated string missing_prerequisites = 3;
+    repeated string warnings = 4;
+}
+
+// Gap analysis result
+message GapAnalysisResult {
+    repeated string missing_capabilities = 1;
+    repeated string weak_capabilities = 2;
+    repeated string recommendations = 3;
+    double coverage_score = 4;
+}
+
+// Optimization result
+message OptimizationResult {
+    repeated OptimizationRecommendation recommendations = 1;
+    repeated PerformanceInsight insights = 2;
+}
+
+message OptimizationRecommendation {
+    string type = 1;  // "caching", "parallelization", "tool_replacement", etc.
+    string description = 2;
+    string target = 3;  // Tool or component to optimize
+    double impact_score = 4;  // Expected impact (0.0 to 1.0)
+    int32 effort_level = 5;  // Implementation effort (1-5)
+}
+
+message PerformanceInsight {
+    string category = 1;  // "bottleneck", "efficiency", "reliability"
+    string description = 2;
+    repeated string evidence = 3;
+    double confidence = 4;
+}
+
+// Self-reflection result
+message ReflectionResult {
+    repeated Pattern success_patterns = 1;
+    repeated Pattern failure_patterns = 2;
+    repeated Insight insights = 3;
+    repeated string recommendations = 4;
+}
+
+message Pattern {
+    string pattern_id = 1;
+    string description = 2;
+    repeated string evidence = 3;
+    double frequency = 4;  // How often this pattern appears
+    double correlation = 5;  // Correlation with success/failure
+}
+
+message Insight {
+    string insight_id = 1;
+    string type = 1;  // "optimization", "risk", "opportunity"
+    string description = 2;
+    repeated string supporting_evidence = 3;
+    double confidence = 4;
+    repeated string actionable_steps = 5;
+}
+
+// Health check messages
+message HealthCheckRequest {
+    string service = 1;
+}
+
+message HealthCheckResponse {
+    enum ServingStatus {
+        UNKNOWN = 0;
+        SERVING = 1;
+        NOT_SERVING = 2;
+        SERVICE_UNKNOWN = 3;
+    }
+    ServingStatus status = 1;
+    string message = 2;
+    map<string, string> metadata = 3;
+}
+
+// Rule loading messages
+message LoadRulesRequest {
+    string rules_content = 1;  // Datalog rules as string
+    string rules_file_path = 2;  // Or path to rules file
+    bool replace_existing = 3;  // Whether to replace or append rules
+}
+
+message LoadRulesResponse {
+    bool success = 1;
+    string message = 2;
+    int32 rules_loaded = 3;
+    repeated string errors = 4;
+}
+
+// Statistics messages
+message StatsRequest {
+    bool include_performance = 1;
+    bool include_rule_stats = 2;
+}
+
+message StatsResponse {
+    int64 total_queries = 1;
+    int64 successful_queries = 2;
+    double average_query_time_ms = 3;
+    int32 active_rules = 4;
+    int32 active_facts = 5;
+    map<string, int64> query_type_counts = 6;
+    repeated string recent_errors = 7;
+    double uptime_seconds = 8;
+}

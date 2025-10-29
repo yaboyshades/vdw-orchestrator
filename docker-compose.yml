@@ -1,0 +1,137 @@
+# Docker Compose configuration for VDW Orchestrator
+# This sets up the complete development environment with all components
+
+version: '3.8'
+
+services:
+  # Main VDW Orchestrator service
+  vdw-orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"  # FastAPI server
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - MANGLE_SERVER_ADDRESS=mangle:50051
+      - DATABASE_PATH=/data/vdw_orchestrator.db
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./data:/data
+      - ./logs:/logs
+    depends_on:
+      - redis
+      - mangle
+    networks:
+      - vdw-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Mangle reasoning sidecar
+  mangle:
+    build:
+      context: ./mangle
+      dockerfile: Dockerfile
+    ports:
+      - "50051:50051"  # gRPC server
+    environment:
+      - MANGLE_PORT=50051
+      - MANGLE_RULES_FILE=/app/reasoning_rules.dl
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./mangle/reasoning_rules.dl:/app/reasoning_rules.dl:ro
+      - ./mangle/config:/app/config:ro
+    networks:
+      - vdw-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "./mangle-server", "--health-check"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for event bus and caching
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - vdw-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Prometheus for monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - vdw-network
+    restart: unless-stopped
+
+  # Grafana for dashboards
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - vdw-network
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+  # Jaeger for distributed tracing
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "14268:14268"  # HTTP collector
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - vdw-network
+    restart: unless-stopped
+
+volumes:
+  redis-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+
+networks:
+  vdw-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
