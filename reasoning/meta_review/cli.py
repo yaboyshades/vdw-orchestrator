@@ -32,8 +32,10 @@ def main():
         author=args.author,
     )
 
+    from pprint import pprint
+
     print("Meta-Review Summary:")
-    print(payload["metrics"]) 
+    pprint(payload["metrics"], indent=2, width=80)
     if integration.should_advance_phase(payload):
         print("Proceed: ✅")
     else:
