@@ -1,0 +1,15 @@
+{
+  "project_id": "10e200a9-4e06-4fb0-bee4-bcb016144925",
+  "current_phase": "IDLE",
+  "initial_vibe": "Build a real-time chat application with WebSockets",
+  "distilled_requirements": null,
+  "phase_1_output": null,
+  "phase_2_output": null,
+  "phase_3_output": null,
+  "phase_4_output": null,
+  "phase_5_output": null,
+  "user_feedback": {},
+  "created_at": "2025-10-29T22:14:46.359877",
+  "updated_at": "2025-10-29T22:14:46.359881",
+  "tools_created": []
+}
