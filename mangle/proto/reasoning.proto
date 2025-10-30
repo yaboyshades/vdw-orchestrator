@@ -1,6 +1,54 @@
 syntax = "proto3";
+
 package reasoning;
-option go_package = "github.com/vdw-orchestrator/mangle/generated";
-service ReasoningService { rpc Query(ReasoningRequest) returns (ReasoningResponse); }
-message ReasoningRequest { string query_id=1; string query_type=2; repeated string facts=3; repeated string rules=4; repeated string goals=5; }
-message ReasoningResponse { string query_id=1; bool success=2; repeated string reasoning_trace=3; double confidence=4; double duration_ms=5; bool allowed=6; string reason=7; repeated string missing_capabilities=8; repeated string recommendations=9; }
+
+option go_package = "github.com/yaboyshades/vdw-orchestrator/mangle/generated/reasoning";
+
+// Reasoning service for deductive inference
+service ReasoningService {
+  // Apply reasoning rules to given facts
+  rpc ApplyRules(ReasoningRequest) returns (ReasoningResponse);
+  
+  // Health check endpoint
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+  
+  // Load new reasoning rules
+  rpc LoadRules(LoadRulesRequest) returns (LoadRulesResponse);
+}
+
+// Request for reasoning operation
+message ReasoningRequest {
+  repeated string facts = 1;
+  repeated string rules = 2;
+  string context = 3;
+}
+
+// Response from reasoning operation
+message ReasoningResponse {
+  repeated string conclusions = 1;
+  repeated string applied_rules = 2;
+  bool success = 3;
+  string error_message = 4;
+}
+
+// Health check request
+message HealthCheckRequest {}
+
+// Health check response
+message HealthCheckResponse {
+  bool healthy = 1;
+  string status = 2;
+}
+
+// Load rules request
+message LoadRulesRequest {
+  string rules_content = 1;
+  string rules_format = 2; // "datalog", "prolog", etc.
+}
+
+// Load rules response
+message LoadRulesResponse {
+  bool success = 1;
+  string error_message = 2;
+  int32 rules_loaded = 3;
+}
