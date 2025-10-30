@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "vdw-orchestrator": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "/home/ubuntu/vdw-orchestrator",
+        "vdw_mcp_server.py"
+      ],
+      "env": {
+        "VDW_API_URL": "http://localhost:8000"
+      }
+    }
+  }
+}

@@ -30,9 +30,9 @@ async def get_orchestrator():
 async def get_registry():
     return _registry
 
-app.include_router(api_router, dependencies=[Depends(get_orchestrator)])
-app.include_router(tools_router, dependencies=[Depends(get_registry)])
-app.include_router(tools_gaps_router, dependencies=[Depends(get_registry)])
+app.include_router(api_router)
+app.include_router(tools_router)
+app.include_router(tools_gaps_router)
 
 @app.on_event("startup")
 async def startup():

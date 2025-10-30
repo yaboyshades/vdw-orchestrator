@@ -1,0 +1,25 @@
+{
+  "mood_json": {
+    "distillation_id": "c167038a-6903-4f13-b97e-03d0e58320bb",
+    "confidence": 0.8,
+    "segments": [
+      {
+        "segment_id": "seg_1",
+        "title": "Requirement 1",
+        "content": "I want to build a simple todo app with React",
+        "dependencies": [],
+        "priority": 1
+      }
+    ]
+  },
+  "requirements_yaml": "requirements:\n  - id: seg_1\n    title: Requirement 1\n    content: I want to build a simple todo app with React\n    priority: 1",
+  "dependency_graph": {
+    "seg_1": []
+  },
+  "validation_checklist": [
+    "All requirements captured",
+    "Dependencies identified",
+    "Priorities assigned",
+    "Technical feasibility assessed"
+  ]
+}

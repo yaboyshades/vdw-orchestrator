@@ -2,6 +2,7 @@ import json
 import logging
 from typing import Any, Dict, List, Optional
 from pathlib import Path
+from datetime import datetime
 
 class MemoryStore:
     """Simple file-based Atoms & Bonds memory.
@@ -19,7 +20,13 @@ class MemoryStore:
         self.logger = logging.getLogger(self.__class__.__name__)
 
     async def store_atom(self, atom_id: str, content: Dict[str, Any]):
-        (self.atoms / f"{atom_id}.json").write_text(json.dumps(content, indent=2))
+        # Custom JSON encoder to handle datetime objects
+        def json_serial(obj):
+            if isinstance(obj, datetime):
+                return obj.isoformat()
+            raise TypeError(f"Type {type(obj)} not serializable")
+        
+        (self.atoms / f"{atom_id}.json").write_text(json.dumps(content, indent=2, default=json_serial))
 
     async def get_atom(self, atom_id: str) -> Optional[Dict[str, Any]]:
         p = self.atoms / f"{atom_id}.json"

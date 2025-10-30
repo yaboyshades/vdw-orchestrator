@@ -1,0 +1,35 @@
+[project]
+name = "vdw-orchestrator-mcp"
+version = "0.1.0"
+description = "VDW (Vibe-Driven Waterfall) Orchestrator MCP Server"
+authors = [
+    {name = "VDW Team", email = "vdw@example.com"}
+]
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+
+dependencies = [
+    "fastapi>=0.104.0",
+    "pydantic>=2.0.0",
+    "redis>=5.0.0",
+    "httpx>=0.25.0",
+    "uvicorn[standard]>=0.24.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.7.0",
+]
+
+[project.scripts]
+vdw-mcp-server = "mcp_wrapper:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["core", "reasoning", "agents"]

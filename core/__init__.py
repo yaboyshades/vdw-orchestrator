@@ -13,6 +13,7 @@ from .models import (
     VDWPhase,
     ProjectContext,
     ToolMetadata,
+    ToolCapability,
     ReasoningQuery,
 )
 
@@ -25,6 +26,7 @@ __all__ = [
     "VDWPhase",
     "ProjectContext", 
     "ToolMetadata",
+    "ToolCapability",
     "ReasoningQuery",
     # "VDWOrchestrator",
     # "VDWStateMachine",

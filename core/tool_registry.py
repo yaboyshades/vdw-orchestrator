@@ -38,9 +38,7 @@ class MCPBoxRegistry:
         # In-memory cache for frequently accessed tools
         self._tool_cache: Dict[str, ToolMetadata] = {}
         self._capability_index: Dict[str, List[str]] = {}  # capability -> tool_ids
-        
-        # Initialize database
-        asyncio.create_task(self._initialize_database())
+        self._initialized = False
     
     async def _initialize_database(self):
         """Initialize SQLite database with comprehensive schema"""

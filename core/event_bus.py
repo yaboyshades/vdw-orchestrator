@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 from typing import Callable, Dict, Any
-import aioredis
+import redis.asyncio as aioredis
 
 class EventBus:
     """Redis-backed pub/sub EventBus with simple channel routing."""
